@@ -1,0 +1,26 @@
+{% load staticfiles %}
+{% load static %}
+<html>
+    <head>
+        <title>Главная</title>
+        <meta charset='utf-8'>
+        <link rel="stylesheet" type="text/css" href="{% static 'css/style.css' %}" >
+    </head>
+
+    <body>
+        <div class='header'>
+            <div class='header_h1'>
+                <h1>Вариант текста для master</h1>
+            </div>
+            <div class='header_cart'>
+            <p>В вашей корзине n товаров <br> <a href='order_form.html'>Оформить заказ</a></p>
+            </div>
+        </div>
+
+        <div class='page_name'>
+        <h2>Главная страница</h2>
+        </div>
+		{% block content %}
+		{% endblock %}
+	   </body>
+</html>

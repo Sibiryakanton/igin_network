@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}  
+
+<div>
+	<h1>Чат</h1>
+    {% for message in messages %}
+        <div>
+            <div>Картинка</div>
+            <div>{{message.message}}</div>
+            <div>{{message.date_published}}</div>
+        </div>
+    {% endfor %}
+	<p>Форма</p>
+</div>
+
+{% endblock %}
