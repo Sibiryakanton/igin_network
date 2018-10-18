@@ -19,15 +19,3 @@ class CustomAuthToken(ObtainAuthToken):
         user = serializer.validated_data['user']
         token, created = Token.objects.get_or_create(user=user)
         return Response({'token': token.key, 'user_id': user.pk})
-
-
-class FriendsManagerView(APIView):
-    def get(self, profile_pk):
-        friends = ProfileModel.objects.get(pk=profile_pk).friends.all()
-        serializer = ProfileSerializer(queryset, many=True)
-        return Response(data=serializer.data)
-        # Получить список друзей
-
-    def post(self):
-        pass
-        # Добавить/удалить пользователя из друзей

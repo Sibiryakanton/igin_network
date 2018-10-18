@@ -43,6 +43,16 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def destroy(self, request):
         pass
 
+    @action(detail=True, methods=['get',])
+    def get_friends(self, request, **kwargs):
+        profile = get_object_or_404(self.queryset, pk=kwargs['pk'])
+        if profile != None:
+            friends = profile.friends.all()
+            serializer = ProfileSerializer(friends, many=True, context={'request': request})
+            return Response(data=serializer.data)
+        else:
+            return Response(data={'pk': ''})
+
 
 class CountryViewSet(viewsets.ModelViewSet):
     queryset = Country.objects.all()
