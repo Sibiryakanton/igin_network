@@ -8,12 +8,14 @@ from rest_framework.decorators import action
 from rest_framework import status
 
 from profiles_app.models import ProfileModel, Country
+from rest_framework.permissions import IsAuthenticated
 
 from .serializers import ProfileSerializer, UserSerializer, CountrySerializer, AddFriendSerializer
 from .error_descriptions import *
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
+    #permission_classes = (IsAuthenticated,)
     queryset = ProfileModel.objects.all()
     serializer_class = ProfileSerializer
 
@@ -27,7 +29,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response({'id': new_profile_id})
 
     def create_user(self, validated_data):
-        new_user = User.objects.create(username=validated_data['username'], password=validated_data['password'])
+        new_user = User.objects.create(username=validated_data['username'])
+        new_user.set_password(validated_data['password'])
+        new_user.save()
         return new_user.pk
 
     def create_profile(self, validated_data, new_user):
@@ -39,6 +43,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
         new_profile.friends.add(new_profile)
         new_profile.save()
         return new_profile.pk
+
+    #обновить профиль (доступно только для своего профиля)
+    #Удалить профиль (доступно только для своего профиля)
 
     @action(detail=True, methods=['get',])
     def get_friends(self, request, **kwargs):

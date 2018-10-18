@@ -8,7 +8,7 @@ router.register(r'users', viewsets.ProfileViewSet)
 router.register(r'countries', viewsets.CountryViewSet)
 
 urlpatterns = [
-    path('auth/get_token/', views.CustomAuthToken.as_view()),
+    path('auth/get_token/', views.CustomAuthToken.as_view(), name='get_token'),
     path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
     path('', include(router.urls)),
 ]
