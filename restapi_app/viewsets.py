@@ -5,10 +5,12 @@ from django.shortcuts import get_object_or_404
 from rest_framework import viewsets
 from rest_framework.response import Response
 from rest_framework.decorators import action
+from rest_framework import status
 
 from profiles_app.models import ProfileModel, Country
 
-from .serializers import ProfileSerializer, UserSerializer, CountrySerializer
+from .serializers import ProfileSerializer, UserSerializer, CountrySerializer, AddFriendSerializer
+from .error_descriptions import *
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
@@ -34,13 +36,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
         new_profile.phone = validated_data['phone']
         new_profile.user = new_user
         new_profile.save()
+        new_profile.friends.add(new_profile)
+        new_profile.save()
         return new_profile.pk
-
-    def update(self, request):
-        pass
-
-    def destroy(self, request):
-        pass
 
     @action(detail=True, methods=['get',])
     def get_friends(self, request, **kwargs):
@@ -50,15 +48,29 @@ class ProfileViewSet(viewsets.ModelViewSet):
             serializer = ProfileSerializer(friends, many=True, context={'request': request})
             return Response(data=serializer.data)
         else:
-            return Response(data={'pk': ''})
+            return Response(data={'pk': PROFILE_404}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=True, methods=['get',])
+    @action(detail=True, methods=['post',])
     def add_friend(self, request, **kwargs):
-        pass
+        profile_serializer = AddFriendSerializer(data=request.data)
+        profile_serializer.is_valid(raise_exception=True)
+        data = profile_serializer.validated_data
+        user = ProfileModel.objects.get(pk=data['user_pk'])
+        friend = ProfileModel.objects.get(pk=data['friend_pk'])
+        user.friends.add(friend)
+        user.save()
+        return Response(data={'status': True})
 
-    @action(detail=True, methods=['get',])
+    @action(detail=True, methods=['post',])
     def remove_friend(self, request, **kwargs):
-        pass
+        profile_serializer = AddFriendSerializer(data=request.data)
+        profile_serializer.is_valid(raise_exception=True)
+        data = profile_serializer.validated_data
+        user = ProfileModel.objects.get(pk=data['user_pk'])
+        friend = ProfileModel.objects.get(pk=data['friend_pk'])
+        user.friends.remove(friend)
+        user.save()
+        return Response(data={'status': True})
 
 
 class CountryViewSet(viewsets.ModelViewSet):
