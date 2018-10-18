@@ -12,5 +12,5 @@ from .models import *
 
 
 def index(request):
-    all_cities = City.objects.all()
-    return render(request, 'index.html', {'all_cities': all_cities})
+    all_countries = Country.objects.all()
+    return render(request, 'index.html', {'all_countries': all_countries})

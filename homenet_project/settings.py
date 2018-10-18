@@ -25,7 +25,7 @@ SECRET_KEY = 'kqp6p8md%qlq4&1wi$=a!v)+1&7*0x*4p85%(tq^)*2$irh!xw'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['127.0.0.1']
 
 
 
@@ -35,6 +35,7 @@ INSTALLED_APPS = [
     'restapi_app',
 
     'rest_framework',
+    'rest_framework.authtoken',
     'channels',
 
     'django.contrib.admin',
@@ -134,14 +135,19 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'homenet_project', 'static'),
 ]
 
+
 REST_FRAMEWORK = {
-    # Use Django's standard `django.contrib.auth` permissions,
-    # or allow read-only access for unauthenticated users.
-    'DEFAULT_PERMISSION_CLASSES': [
-        'rest_framework.permissions.DjangoModelPermissions',
-    ]
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 10,
 }
 
+
+# Настройки для django-channels
 ASGI_APPLICATION = 'homenet_project.routing.application'
 CHANNEL_LAYERS = {
     'default': {
