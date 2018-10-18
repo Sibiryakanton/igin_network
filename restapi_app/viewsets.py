@@ -20,7 +20,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
         user_serializer = UserSerializer(data=request.data)
         user_serializer.is_valid(raise_exception=True)
         profile_serializer.is_valid(raise_exception=True)
-
         new_user = self.create_user(user_serializer.validated_data)
         new_profile_id = self.create_profile(profile_serializer.validated_data, new_user)
         return Response({'id': new_profile_id})
@@ -52,6 +51,14 @@ class ProfileViewSet(viewsets.ModelViewSet):
             return Response(data=serializer.data)
         else:
             return Response(data={'pk': ''})
+
+    @action(detail=True, methods=['get',])
+    def add_friend(self, request, **kwargs):
+        pass
+
+    @action(detail=True, methods=['get',])
+    def remove_friend(self, request, **kwargs):
+        pass
 
 
 class CountryViewSet(viewsets.ModelViewSet):
