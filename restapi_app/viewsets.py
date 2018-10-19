@@ -44,10 +44,19 @@ class ProfileViewSet(viewsets.ModelViewSet):
         new_profile.save()
         return new_profile.pk
 
-    #обновить профиль (доступно только для своего профиля)
-    #Удалить профиль (доступно только для своего профиля)
+    def update(self, request, **kwargs):
+        profile = ProfileModel.objects.get(pk=kwargs['pk'])
+        if request.user != profile.user:
+            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
+        return super(ProfileViewSet, self).update(request, **kwargs)
 
-    @action(detail=True, methods=['get',])
+    def destroy(self, request, **kwargs):
+        profile = ProfileModel.objects.get(pk=kwargs['pk'])
+        if request.user != profile.user:
+            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
+        return super(ProfileViewSet, self).destroy(request, **kwargs)
+
+    @action(detail=True, methods=['get', ])
     def get_friends(self, request, **kwargs):
         profile = get_object_or_404(self.queryset, pk=kwargs['pk'])
         if profile != None:
@@ -57,8 +66,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         else:
             return Response(data={'pk': PROFILE_404}, status=status.HTTP_404_NOT_FOUND)
 
-    @action(detail=True, methods=['post',])
-    def add_friend(self, request, **kwargs):
+    @action(detail=True, methods=['post', ])
+    def add_friend(self, request):
         profile_serializer = AddFriendSerializer(data=request.data)
         profile_serializer.is_valid(raise_exception=True)
         data = profile_serializer.validated_data
@@ -68,8 +77,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
         user.save()
         return Response(data={'status': True})
 
-    @action(detail=True, methods=['post',])
-    def remove_friend(self, request, **kwargs):
+    @action(detail=True, methods=['post', ])
+    def remove_friend(self, request):
         profile_serializer = AddFriendSerializer(data=request.data)
         profile_serializer.is_valid(raise_exception=True)
         data = profile_serializer.validated_data
