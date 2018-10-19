@@ -45,10 +45,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return new_profile.pk
 
     def update(self, request, **kwargs):
-        profile = ProfileModel.objects.get(pk=kwargs['pk'])
-        if request.user != profile.user:
-            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
-        return super(ProfileViewSet, self).update(request, **kwargs)
+        check_access = check_profile_access(kwargs['pk'])
+        return super(ProfileViewSet, self).update(request, **kwargs) if check_access == {} else check_access
+
 
     def destroy(self, request, **kwargs):
         profile = ProfileModel.objects.get(pk=kwargs['pk'])
@@ -60,7 +59,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def get_friends(self, request, **kwargs):
         profile = get_object_or_404(self.queryset, pk=kwargs['pk'])
         if profile != None:
-            friends = profile.friends.all()
+            friends = profile.friends.exclude(pk=profile.pk)
             serializer = ProfileSerializer(friends, many=True, context={'request': request})
             return Response(data=serializer.data)
         else:
@@ -68,6 +67,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', ])
     def add_friend(self, request):
+        profile = ProfileModel.objects.get(pk=kwargs['pk'])
+        if request.user != profile.user:
+            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
         profile_serializer = AddFriendSerializer(data=request.data)
         profile_serializer.is_valid(raise_exception=True)
         data = profile_serializer.validated_data
@@ -79,6 +81,9 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', ])
     def remove_friend(self, request):
+        profile = ProfileModel.objects.get(pk=kwargs['pk'])
+        if request.user != profile.user:
+            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
         profile_serializer = AddFriendSerializer(data=request.data)
         profile_serializer.is_valid(raise_exception=True)
         data = profile_serializer.validated_data
@@ -92,3 +97,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
 class CountryViewSet(viewsets.ModelViewSet):
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
+
+
+def check_profile_access(pk):
+    profile = ProfileModel.objects.get(pk=kwargs['pk'])
+    if request.user != profile.user:
+        return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
+    else:
+        return {}
