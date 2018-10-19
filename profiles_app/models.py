@@ -22,11 +22,11 @@ class ProfileModel(models.Model):
     birthdate = models.DateField('Дата рождения', null=True, blank=True,)
     country = models.ForeignKey('Country', verbose_name='Страна', null=True, blank=True, on_delete=models.SET_NULL)
     phone = models.CharField('Номер телефона', max_length=20, unique=True,
-                     validators=[RegexValidator(regex='^[0-9]{9,16}$',
-                                                message=PHONE_400
-                                                ),
-                                 ]
-                     )
+                             validators=[RegexValidator(regex='^[0-9]{9,16}$',
+                                                        message=PHONE_400
+                                                        ),
+                                         ]
+                             )
     linkedin = models.URLField('LinkedIn', max_length=150, blank=True)
     short_status = models.CharField('Статус', max_length=200, blank=True)
     friends = models.ManyToManyField('ProfileModel', verbose_name='Друзья', blank=True)

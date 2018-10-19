@@ -15,7 +15,7 @@ from .error_descriptions import *
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
-    #permission_classes = (IsAuthenticated,)
+    # permission_classes = (IsAuthenticated,)
     queryset = ProfileModel.objects.all()
     serializer_class = ProfileSerializer
 
@@ -27,6 +27,48 @@ class ProfileViewSet(viewsets.ModelViewSet):
         new_user = self.create_user(user_serializer.validated_data)
         new_profile_id = self.create_profile(profile_serializer.validated_data, new_user)
         return Response({'id': new_profile_id})
+
+    def update(self, request, **kwargs):
+        check_access = check_profile_access(request, kwargs['pk'])
+        return super(ProfileViewSet, self).update(request, **kwargs) if check_access == {} else check_access
+
+    def destroy(self, request, **kwargs):
+        check_access = check_profile_access(request, kwargs['pk'])
+        if check_access:
+            return check_access
+        return super(ProfileViewSet, self).destroy(request, **kwargs)
+
+    @action(detail=True, methods=['get', ])
+    def get_friends(self, request, **kwargs):
+        profile = get_object_or_404(self.queryset, pk=kwargs['pk'])
+        if profile is not None:
+            friends = profile.friends.exclude(pk=profile.pk)
+            serializer = ProfileSerializer(friends, many=True, context={'request': request})
+            return Response(data=serializer.data)
+        else:
+            return Response(data={'pk': PROFILE_404}, status=status.HTTP_404_NOT_FOUND)
+
+    @action(detail=True, methods=['post', ])
+    def add_friend(self, request, **kwargs):
+        check_access = check_profile_access(request, kwargs['pk'])
+        if check_access:
+            return check_access
+
+        user, friend = return_user_friend(request, **kwargs)
+        user.friends.add(friend)
+        user.save()
+        return Response(data={'status': True})
+
+    @action(detail=True, methods=['post', ])
+    def remove_friend(self, request, **kwargs):
+        check_access = check_profile_access(request, kwargs['pk'])
+        if check_access:
+            return check_access
+
+        user, friend = return_user_friend(request, **kwargs)
+        user.friends.remove(friend)
+        user.save()
+        return Response(data={'status': True})
 
     def create_user(self, validated_data):
         new_user = User.objects.create(username=validated_data['username'])
@@ -44,54 +86,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
         new_profile.save()
         return new_profile.pk
 
-    def update(self, request, **kwargs):
-        check_access = check_profile_access(kwargs['pk'])
-        return super(ProfileViewSet, self).update(request, **kwargs) if check_access == {} else check_access
-
-
-    def destroy(self, request, **kwargs):
-        profile = ProfileModel.objects.get(pk=kwargs['pk'])
-        if request.user != profile.user:
-            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
-        return super(ProfileViewSet, self).destroy(request, **kwargs)
-
-    @action(detail=True, methods=['get', ])
-    def get_friends(self, request, **kwargs):
-        profile = get_object_or_404(self.queryset, pk=kwargs['pk'])
-        if profile != None:
-            friends = profile.friends.exclude(pk=profile.pk)
-            serializer = ProfileSerializer(friends, many=True, context={'request': request})
-            return Response(data=serializer.data)
-        else:
-            return Response(data={'pk': PROFILE_404}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=True, methods=['post', ])
-    def add_friend(self, request):
-        profile = ProfileModel.objects.get(pk=kwargs['pk'])
-        if request.user != profile.user:
-            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
+    def return_user_friend(self, request, **kwargs):
         profile_serializer = AddFriendSerializer(data=request.data)
         profile_serializer.is_valid(raise_exception=True)
         data = profile_serializer.validated_data
-        user = ProfileModel.objects.get(pk=data['user_pk'])
+        user = ProfileModel.objects.get(pk=kwargs['pk'])
         friend = ProfileModel.objects.get(pk=data['friend_pk'])
-        user.friends.add(friend)
-        user.save()
-        return Response(data={'status': True})
-
-    @action(detail=True, methods=['post', ])
-    def remove_friend(self, request):
-        profile = ProfileModel.objects.get(pk=kwargs['pk'])
-        if request.user != profile.user:
-            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
-        profile_serializer = AddFriendSerializer(data=request.data)
-        profile_serializer.is_valid(raise_exception=True)
-        data = profile_serializer.validated_data
-        user = ProfileModel.objects.get(pk=data['user_pk'])
-        friend = ProfileModel.objects.get(pk=data['friend_pk'])
-        user.friends.remove(friend)
-        user.save()
-        return Response(data={'status': True})
+        return user, friend
 
 
 class CountryViewSet(viewsets.ModelViewSet):
@@ -99,9 +100,12 @@ class CountryViewSet(viewsets.ModelViewSet):
     serializer_class = CountrySerializer
 
 
-def check_profile_access(pk):
-    profile = ProfileModel.objects.get(pk=kwargs['pk'])
-    if request.user != profile.user:
+def check_profile_access(request_user, pk):
+    '''
+    profile = ProfileModel.objects.get(pk=pk)
+    if request_user != profile.user:
         return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
     else:
         return {}
+    '''
+    return {}

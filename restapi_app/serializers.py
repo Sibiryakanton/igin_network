@@ -23,17 +23,11 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class AddFriendSerializer(serializers.Serializer):
-    user_pk = serializers.IntegerField()
     friend_pk = serializers.IntegerField()
 
     def validate(self, data):
         queryset = ProfileModel.objects.all()
         errors = {}
-        if data['user_pk'] == data['friend_pk']:
-            errors['user_pk'] = SELF_FRIEND_ERROR
-        user = get_object_or_404(queryset, pk=data['user_pk'])
-        if user is None:
-            errors['user_pk'] = PROFILE_404
         friend = get_object_or_404(queryset, pk=data['friend_pk'])
         if friend is None:
             errors['friend_pk'] = PROFILE_404

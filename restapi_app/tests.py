@@ -5,8 +5,8 @@ from django.contrib.auth.models import User
 
 
 class APIListViewTest(APITestCase):
-    first_user_data ={'password': 'MyPass2018', 'username': 'admin2', 'phone': '80055535943',}
-    second_user_data ={'password': 'MyPass2018', 'username': 'admin3', 'phone': '8005553593',}
+    first_user_data ={'password': 'MyPass2018', 'username': 'admin2', 'phone': '80055535943'}
+    second_user_data ={'password': 'MyPass2018', 'username': 'admin3', 'phone': '8005553593'}
 
     client = Client()
 
@@ -31,3 +31,6 @@ class APIListViewTest(APITestCase):
 
     # Получить список друзей
     # Отправить/отозвать заявку в друзья
+    # Обновить профиль
+    # Удалить профиль
+    # Проверка требования токенов на соответствующих запросах
