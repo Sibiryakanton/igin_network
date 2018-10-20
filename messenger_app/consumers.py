@@ -10,7 +10,6 @@ class ChatConsumer(WebsocketConsumer):
     def connect(self):
         print('connect')
         self.room_name = self.scope['url_route']['kwargs']['room_name']
-
         self.room_group_name = 'chat_{}'.format(self.room_name)
         self.room_object = ChatRoomModel.objects.get(pk=self.room_name)
         self.room_messages = ChatMessageModel.objects.filter(chatroom=self.room_object).order_by('date_published').values()
@@ -22,7 +21,6 @@ class ChatConsumer(WebsocketConsumer):
 
     def disconnect(self, close_code):
         print('disconnect')
-
         async_to_sync(self.channel_layer.group_discard)(
             self.room_group_name,
             self.channel_name
@@ -34,8 +32,7 @@ class ChatConsumer(WebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         user = User.objects.get(id=text_data_json['id'])
-        message_object = ChatMessageModel.objects.create(author=user, message=message, chatroom=self.room_object)
-        print(text_data_json)
+        ChatMessageModel.objects.create(author=user, message=message, chatroom=self.room_object)
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name,
             {

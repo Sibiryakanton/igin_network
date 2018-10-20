@@ -1,7 +1,7 @@
 # coding=utf-8
 from django.db import models
-
 from django.contrib.auth.models import User
+
 
 class ChatRoomModel(models.Model):
     members = models.ManyToManyField(User, verbose_name='Участники')

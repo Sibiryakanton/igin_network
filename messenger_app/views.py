@@ -1,7 +1,9 @@
 from django.shortcuts import render
 from django.views.generic import View
-from .models import ChatRoomModel, ChatMessageModel
 from django.utils.safestring import mark_safe
+
+from .models import ChatRoomModel, ChatMessageModel
+from profiles_app.models import ProfileModel
 import json
 
 class ChatView(View):
@@ -14,11 +16,7 @@ class ChatView(View):
         return render(request, 'chatroom.html', {'messages': messages})
 
 
-class TestChatIndexView(View):
+class ChatIndexView(View):
     def get(self, request):
-        return render(request, 'messenger_index.html', {})
-
-
-class TestChatRoomView(View):
-    def get(self, request, room_name):
-        return render(request, 'messenger_room.html', {'room_name_json': mark_safe(json.dumps(room_name))})
+        profiles = ProfileModel.objects.exclude(user=request.user)
+        return render(request, 'messenger_index.html', {'profiles': profiles})
