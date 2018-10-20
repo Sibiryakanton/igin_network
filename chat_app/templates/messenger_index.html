@@ -1,0 +1,9 @@
+{% extends 'new_base.html' %}
+{% block content %}
+
+<p>Список доступных чатов:</p>
+{% for chat in chats_info.chats %}
+<p><span class="chat_counter_{{chat.chat_id}}"></span><a href="{% url 'chat_room' room_name=chat.chat_id %}">{{chat.author_nickname}}</a></p>
+{% endfor %}
+<p>{{client_ip}}</p>
+{% endblock %}

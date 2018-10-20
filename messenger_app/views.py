@@ -6,13 +6,12 @@ from .models import ChatRoomModel, ChatMessageModel
 from profiles_app.models import ProfileModel
 import json
 
+
 class ChatView(View):
     def get(self, request, chat_id):
         chat = ChatRoomModel.objects.get(id=chat_id)
         messages = ChatMessageModel.objects.filter(chatroom=chat).order_by('-date_published')
-
         messages = messages if len(messages) < 10 else messages[:10]
-
         return render(request, 'chatroom.html', {'messages': messages})
 
 
