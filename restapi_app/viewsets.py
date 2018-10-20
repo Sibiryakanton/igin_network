@@ -4,7 +4,7 @@ from django.shortcuts import get_object_or_404
 
 from rest_framework import viewsets
 from rest_framework.response import Response
-from rest_framework.decorators import action
+from rest_framework.decorators import action, permission_classes
 from rest_framework import status
 
 from profiles_app.models import ProfileModel, Country
@@ -13,11 +13,18 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import ProfileSerializer, UserSerializer, CountrySerializer, AddFriendSerializer
 from .error_descriptions import *
 
+from rest_framework.permissions import BasePermission
+
+
+class CustomPermission(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated or view.action in ['create']
+
 
 class ProfileViewSet(viewsets.ModelViewSet):
-    # permission_classes = (IsAuthenticated,)
     queryset = ProfileModel.objects.all()
     serializer_class = ProfileSerializer
+    permission_classes = (CustomPermission,)
 
     def create(self, request):
         profile_serializer = self.serializer_class(data=request.data)
@@ -29,13 +36,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response({'id': new_profile_id})
 
     def update(self, request, **kwargs):
-        check_access = self.check_profile_access(request, kwargs['pk'])
-        return super(ProfileViewSet, self).update(request, **kwargs) if check_access == {} else check_access
+        obj = get_object_or_404(self.queryset, pk=kwargs["pk"])
+        obj.check_permission(request.user.pk) #check_access = self.check_profile_access(request, kwargs['pk'])
+        return super(ProfileViewSet, self).update(request, **kwargs)
 
     def destroy(self, request, **kwargs):
-        check_access = self.check_profile_access(request, kwargs['pk'])
-        if check_access:
-            return check_access
+        obj = get_object_or_404(self.queryset, pk=kwargs["pk"])
+        obj.check_permission(request.user.pk)
         return super(ProfileViewSet, self).destroy(request, **kwargs)
 
     @action(detail=True, methods=['get', ])
@@ -50,9 +57,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', ])
     def add_friend(self, request, **kwargs):
-        check_access_error = self.check_profile_access(request, kwargs['pk'])
-        if check_access_error:
-            return check_access_error
+        obj = get_object_or_404(self.queryset, pk=kwargs["pk"])
+        obj.check_permission(request.user.pk)
 
         user, friend = self.get_user_friend(request, **kwargs)
         user.friends.add(friend)
@@ -61,9 +67,8 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', ])
     def remove_friend(self, request, **kwargs):
-        check_access_error = self.check_profile_access(request, kwargs['pk'])
-        if check_access_error:
-            return check_access_error
+        obj = get_object_or_404(self.queryset, pk=kwargs["pk"])
+        obj.check_permission(request.user.pk)
 
         user, friend = self.get_user_friend(request, **kwargs)
         user.friends.remove(friend)
@@ -91,16 +96,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
         user = ProfileModel.objects.get(pk=kwargs['pk'])
         friend = ProfileModel.objects.get(pk=data['friend_pk'])
         return user, friend
-
-    def check_profile_access(self, request_user, pk):
-        '''
-        profile = ProfileModel.objects.get(pk=pk)
-        if request_user != profile.user:
-            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
-        else:
-            return {}
-        '''
-        return {}
 
 
 class CountryViewSet(viewsets.ModelViewSet):

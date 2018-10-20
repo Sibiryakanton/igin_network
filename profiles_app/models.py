@@ -2,10 +2,13 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.core.validators import RegexValidator
+
+from rest_framework.response import Response
+from rest_framework import status
+
 
 from restapi_app.error_descriptions import *
 
@@ -34,6 +37,10 @@ class ProfileModel(models.Model):
 
     def return_default_id(self):
         return 'id{}'.format(self.pk)
+
+    def check_permission(self, user_pk):
+        if user_pk != self.user.pk:
+            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
 
     def __str__(self):
         return '{} {}, {}'.format(self.first_name, self.last_name, self.nickname or self.return_default_id())
