@@ -29,11 +29,11 @@ class ProfileViewSet(viewsets.ModelViewSet):
         return Response({'id': new_profile_id})
 
     def update(self, request, **kwargs):
-        check_access = check_profile_access(request, kwargs['pk'])
+        check_access = self.check_profile_access(request, kwargs['pk'])
         return super(ProfileViewSet, self).update(request, **kwargs) if check_access == {} else check_access
 
     def destroy(self, request, **kwargs):
-        check_access = check_profile_access(request, kwargs['pk'])
+        check_access = self.check_profile_access(request, kwargs['pk'])
         if check_access:
             return check_access
         return super(ProfileViewSet, self).destroy(request, **kwargs)
@@ -50,22 +50,22 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     @action(detail=True, methods=['post', ])
     def add_friend(self, request, **kwargs):
-        check_access = check_profile_access(request, kwargs['pk'])
-        if check_access:
-            return check_access
+        check_access_error = self.check_profile_access(request, kwargs['pk'])
+        if check_access_error:
+            return check_access_error
 
-        user, friend = return_user_friend(request, **kwargs)
+        user, friend = self.get_user_friend(request, **kwargs)
         user.friends.add(friend)
         user.save()
         return Response(data={'status': True})
 
     @action(detail=True, methods=['post', ])
     def remove_friend(self, request, **kwargs):
-        check_access = check_profile_access(request, kwargs['pk'])
-        if check_access:
-            return check_access
+        check_access_error = self.check_profile_access(request, kwargs['pk'])
+        if check_access_error:
+            return check_access_error
 
-        user, friend = return_user_friend(request, **kwargs)
+        user, friend = self.get_user_friend(request, **kwargs)
         user.friends.remove(friend)
         user.save()
         return Response(data={'status': True})
@@ -78,15 +78,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def create_profile(self, validated_data, new_user):
         new_user = User.objects.get(pk=new_user)
-        new_profile = ProfileModel()
-        new_profile.phone = validated_data['phone']
-        new_profile.user = new_user
+        new_profile = ProfileModel(phone=validated_data['phone'], user=new_user)
         new_profile.save()
         new_profile.friends.add(new_profile)
         new_profile.save()
         return new_profile.pk
 
-    def return_user_friend(self, request, **kwargs):
+    def get_user_friend(self, request, **kwargs):
         profile_serializer = AddFriendSerializer(data=request.data)
         profile_serializer.is_valid(raise_exception=True)
         data = profile_serializer.validated_data
@@ -94,18 +92,17 @@ class ProfileViewSet(viewsets.ModelViewSet):
         friend = ProfileModel.objects.get(pk=data['friend_pk'])
         return user, friend
 
+    def check_profile_access(self, request_user, pk):
+        '''
+        profile = ProfileModel.objects.get(pk=pk)
+        if request_user != profile.user:
+            return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
+        else:
+            return {}
+        '''
+        return {}
+
 
 class CountryViewSet(viewsets.ModelViewSet):
     queryset = Country.objects.all()
     serializer_class = CountrySerializer
-
-
-def check_profile_access(request_user, pk):
-    '''
-    profile = ProfileModel.objects.get(pk=pk)
-    if request_user != profile.user:
-        return Response(data={'pk': PROFILE_403}, status=status.HTTP_403_FORBIDDEN)
-    else:
-        return {}
-    '''
-    return {}
