@@ -6,6 +6,7 @@ from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
 
 from .models import ChatRoomModel, ChatMessageModel
+from profiles_app.models import ProfileModel
 
 from datetime import date, datetime, time, timedelta
 import json
@@ -58,7 +59,8 @@ class ChatConsumer(WebsocketConsumer):
         date_attr = message_obj.published_date
         date_published = '{}-{}-{}'.format(date_attr.year, date_attr.month, date_attr.day)
         time_published = '{}:{}:{}'.format(date_attr.hour, date_attr.minute, date_attr.second)
-        nickname = get_nickname(message_obj.author)[0]
+        profile = ProfileModel.objects.get(user=self.user)
+        nickname = str(profile)
         async_to_sync(self.channel_layer.send)(
             self.channel_name,
             {
@@ -80,7 +82,8 @@ class ChatConsumer(WebsocketConsumer):
         date_attr = message_obj.published_date
         date_published = '{}-{}-{}'.format(date_attr.year, date_attr.month, date_attr.day)
         time_published = '{}:{}:{}'.format(date_attr.hour, date_attr.minute, date_attr.second)
-        nickname = get_nickname(self.user)[0]
+        profile = ProfileModel.objects.get(user=self.user)
+        nickname = str(profile)
 
         async_to_sync(self.channel_layer.group_send)(
             self.room_group_name,
