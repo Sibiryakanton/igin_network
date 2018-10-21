@@ -9,8 +9,6 @@ var NewUpdatePlusBadge = function(){
   $('#counter').removeClass('badge-secondary');
   $('#counter').removeClass('badge-success');
   var newMessLen = document.getElementById('counter').innerHTML;
-  /*$('#counter').removeClass('badge-secondary');
-  $('#counter').removeClass('badge-success'); */
   newMessLen = parseInt(newMessLen) + 1;
   $('#counter').text(newMessLen);
   $('#counter').addClass((newMessLen != 0) ? 'badge-success' : 'badge-secondary');
@@ -107,14 +105,12 @@ var chatSocket = new WebSocket(room_socket_url);
 
             current_user_id = document.getElementById('current_user_id').innerHTML;
             var updatedElement = document.getElementById('message_' + message_id + '_' + author_id);
-            console.error('message_' + message_id + '_' + author_id);
             updatedElement.classList.remove('alert-success');
             updatedElement.classList.add('alert-light');
             if (current_user_id != author_id) {
                 NewUpdateMinusBadge();
               }
          }
-
     };
 
 $(document).on('mouseenter', '.alert-success', function(e){

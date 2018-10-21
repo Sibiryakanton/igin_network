@@ -2,23 +2,20 @@
 from django.contrib.auth.models import User
 from django.shortcuts import get_object_or_404
 
-from rest_framework import viewsets
+from rest_framework import viewsets, status
 from rest_framework.response import Response
 from rest_framework.decorators import action, permission_classes
-from rest_framework import status
+from rest_framework.permissions import IsAuthenticated, BasePermission
 
 from profiles_app.models import ProfileModel, Country
-from rest_framework.permissions import IsAuthenticated
-
 from .serializers import ProfileSerializer, UserSerializer, CountrySerializer, AddFriendSerializer
 from .error_descriptions import *
-
-from rest_framework.permissions import BasePermission
 
 
 class CustomPermission(BasePermission):
     def has_permission(self, request, view):
-        return request.user.is_authenticated or view.action in ['create']
+        # Неавторизованным пользователям доступны только регистрация и GET-методы
+        return request.user.is_authenticated or (view.action in ['create'] or request.method in ['GET'])
 
 
 class ProfileViewSet(viewsets.ModelViewSet):
