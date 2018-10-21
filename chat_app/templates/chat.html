@@ -1,0 +1,26 @@
+{% extends 'base_chat.html' %}
+
+{% load static staticfiles %}
+
+{% block content %}
+<div class="container">
+
+  <h5>Новые сообщения <span id='counter' class="badge badge-success">0</span></h5>
+  <div class="input-group mb-3">
+    <textarea class="form-control" id='message_box' aria-label="With textarea">
+    </textarea>
+    <div class="input-group-append">
+      <button id='btn_send' class="btn btn-outline-secondary" type="button">Send</button>
+    </div>
+  </div>
+
+  <div class="row" id='messages'>
+    <div class="single_message">
+        <div class="author">Петр</div>
+        <div class="message">Сообщение</div>
+        <div class="date">02.23.2018</div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

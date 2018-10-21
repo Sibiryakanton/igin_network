@@ -37,7 +37,7 @@ class ProfileViewSet(viewsets.ModelViewSet):
 
     def update(self, request, **kwargs):
         obj = get_object_or_404(self.queryset, pk=kwargs["pk"])
-        obj.check_permission(request.user.pk) #check_access = self.check_profile_access(request, kwargs['pk'])
+        obj.check_permission(request.user.pk)
         return super(ProfileViewSet, self).update(request, **kwargs)
 
     def destroy(self, request, **kwargs):
@@ -59,7 +59,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def add_friend(self, request, **kwargs):
         obj = get_object_or_404(self.queryset, pk=kwargs["pk"])
         obj.check_permission(request.user.pk)
-
         user, friend = self.get_user_friend(request, **kwargs)
         user.friends.add(friend)
         user.save()
@@ -69,7 +68,6 @@ class ProfileViewSet(viewsets.ModelViewSet):
     def remove_friend(self, request, **kwargs):
         obj = get_object_or_404(self.queryset, pk=kwargs["pk"])
         obj.check_permission(request.user.pk)
-
         user, friend = self.get_user_friend(request, **kwargs)
         user.friends.remove(friend)
         user.save()

@@ -1,27 +1,14 @@
 # coding=utf-8
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError
 from django.utils import timezone
 
 from channels.generic.websocket import WebsocketConsumer
 from asgiref.sync import async_to_sync
-from celery import task
-
-from api_app.error_descriptions import CHATROOM_404, CHATROOM_403, ANONYMOUS_USER
-from api_app.utils import get_nickname
-from main_app.models import Astrologer, CustomerModel
 
 from .models import ChatRoomModel, ChatMessageModel
 
 from datetime import date, datetime, time, timedelta
 import json
-
-
-hello_template = 'Здравствуйте, меня зовут Имя Фамилия, я потомственный астролог бла бла'
-AUTORESPONDER_DICT = {'привет': hello_template,
-                      'здравствуйте': hello_template,
-                      'добрый день': hello_template,
-                      'рад знакомству': hello_template}
 
 
 class ChatConsumer(WebsocketConsumer):
@@ -231,99 +218,3 @@ class ChatConsumer(WebsocketConsumer):
                 }
             )
             return False
-
-
-class MessageCounterConsumer(WebsocketConsumer):
-    def connect(self):
-        # Собираем список комнат для подключения. Плюс отправляем на клиент счетчики сообщений:
-        # сначала по каждому диалогу в отдельности, затем сумму
-        print('connect')
-        self.user = self.scope['user']
-        rooms_list = self.collect_chat_list()
-        unread_messages_sum = 0
-        for room in rooms_list:
-            room_group_name = 'chat_{}'.format(room)
-            async_to_sync(self.channel_layer.group_add)(
-                room_group_name,
-                self.channel_name,
-            )
-            unread_messages = ChatMessageModel.objects.filter(chatroom__pk=room, read=False).exclude(author=self.user)
-            unread_messages_sum += len(unread_messages)
-            self.send_chat_counter(len(unread_messages), room)
-        self.send_sum_counter_number(unread_messages_sum)
-        self.accept()
-
-    def disconnect(self, close_code):
-        print('disconnect')
-        rooms_list = self.collect_chat_list()
-        for room in rooms_list:
-            room_group_name = 'chat_{}'.format(room)
-            async_to_sync(self.channel_layer.group_discard)(
-                room_group_name,
-                self.channel_name,
-            )
-
-    def send_sum_counter_number(self, unread_messages_sum):
-        #Отправляем сумму непрочитанных сообщений для общего счетчика
-        async_to_sync(self.channel_layer.send)(
-            self.channel_name,
-            {
-                'type': 'set_sum_counter',
-                'unread_messages_sum': unread_messages_sum,
-                'message_type': 'set_sum_counter',
-                'chat_id': None,
-            }
-        )
-
-    def send_chat_counter(self, message_count, room_id):
-        # Отправка непрочитанных сообщений по конкретному диалогу
-        async_to_sync(self.channel_layer.send)(
-            self.channel_name,
-            {
-                'type': 'set_sum_counter',
-                'message_type': 'chat_counter',
-                'unread_messages_sum': message_count,
-                'chat_id': room_id,
-            }
-        )
-
-    def set_sum_counter(self, event):
-        #Общая функция-отправитель для счетчиков
-        unread_messages_sum = event['unread_messages_sum']
-        chat_id = event['chat_id']
-        message_type = event['message_type']
-        self.send(text_data=json.dumps({
-            'message_type': message_type,
-            'unread_messages_sum': unread_messages_sum,
-            'chat_id': chat_id,
-        }))
-
-
-    def chat_message(self, event):
-        #Обработчик события chat_message (нам нужно обновлять счетчики при появлении нового сообщения)
-        author_id = event['author_id']
-        chat_id = event['chat_id']
-        if self.user.pk != author_id:
-            self.send(text_data=json.dumps({
-                'message_type': 'create_message',
-                'chat_id': chat_id,
-            }))
-
-    def update_message(self, event):
-        # Обработчик события update_message (нам нужно обновлять счетчики при обновлении статуса старого сообщения)
-        author_id = event['author_id']
-        chat_id = event['chat_id']
-        if self.user.pk != author_id:
-            self.send(text_data=json.dumps({
-                'message_type': 'update_message_status',
-                'chat_id': chat_id,
-            }))
-
-    def collect_chat_list(self):
-        #Сбор всех чатов, в которых состоит пользователь
-        rooms_list = []
-        if not self.user.is_anonymous:
-            chats = ChatRoomModel.objects.filter(members=self.user).order_by('-last_updated_date')
-            for chat in chats:
-                rooms_list.append(chat.id)
-        return rooms_list

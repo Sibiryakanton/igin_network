@@ -1,0 +1,17 @@
+{% load staticfiles %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <title>Chat Room</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'chat_app/style.css' %}" />
+</head>
+<body>
+<div style="display: none" type="hidden" id="current_user_id">{{request.user.id}}</div>
+    <h4>Чаты</h4>
+    <h4>Профили</h4>
+
+{% block content %}
+{% endblock %}
+</body>
+</html>

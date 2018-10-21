@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block content %}
+    {% for profile in profiles %}
+        <p><a href="{% url 'create_chat' profile_id=profile.id %}">{{profile}}</a></p>
+    {% endfor %}
+    <script type="text/javascript" src="{% static 'chatbot_app/script_bot_counter.js' %}"></script>
+{% endblock %}
