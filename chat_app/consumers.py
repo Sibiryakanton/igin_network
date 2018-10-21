@@ -7,6 +7,7 @@ from asgiref.sync import async_to_sync
 
 from .models import ChatRoomModel, ChatMessageModel
 from profiles_app.models import ProfileModel
+from restapi_app.error_descriptions import CHAT_400
 
 from datetime import date, datetime, time, timedelta
 import json
@@ -19,8 +20,7 @@ class ChatConsumer(WebsocketConsumer):
         self.room_group_name = 'chat_{}'.format(self.room_name)
         self.user = self.scope['user']
 
-        check_room = self.check_room_access()
-        if check_room:
+        if self.check_room_access():
             async_to_sync(self.channel_layer.group_add)(
                 self.room_group_name,
                 self.channel_name
@@ -131,93 +131,44 @@ class ChatConsumer(WebsocketConsumer):
     def update_message_status(self, message_obj, current_user_pk):
         message_obj.read = True
         message_obj.save()
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                'type': 'update_message',
-                'message_type': 'update_message_status',
-                'message_id': message_obj.pk,
-                'chat_id': message_obj.chatroom.pk,
-                'author_id': message_obj.author.pk,
-                'current_user_id': current_user_pk,
-                'read': message_obj.read,
-            }
-        )
-
-    def update_message(self, event):
-        read = event['read']
-        message_id = event['message_id']
-        message_type = event['message_type']
-        author_id = event['author_id']
-        chat_id = event['chat_id']
-        current_user_id = event['current_user_id']
         self.send(text_data=json.dumps({
-            'message_id': message_id,
-            'author_id': author_id,
-            'current_user_id': current_user_id,
-            'chat_id': chat_id,
-            'read': read,
-            'message_type': message_type,
+            'message_type': 'update_message_status',
+            'message_id': message_obj.pk,
+            'author_id': message_obj.author.pk,
+            'current_user_id': current_user_pk,
+            'chat_id': message_obj.chatroom.pk,
+            'read': message_obj.read,
         }))
 
     def check_room_access(self):
-        date_attr = timezone.now()
-        date_published = '{}-{}-{}'.format(date_attr.year, date_attr.month, date_attr.day)
-        time_published = '{}:{}:{}'.format(date_attr.hour, date_attr.minute, date_attr.second)
         try:
             self.room_object = ChatRoomModel.objects.get(pk=self.room_name)
-
             if self.user in self.room_object.members.all():
                 return self.room_object
             else:
-                if self.user.is_anonymous:
-                    async_to_sync(self.channel_layer.send)(
-                        self.channel_name,
-                        {
-                            'type': 'chat_message',
-                            'message_type': 'create_message',
-                            'message': ANONYMOUS_USER,
-                            'date_published': date_published,
-                            'time_published': time_published,
-                            'author': 'Ошибка',
-                            'message_id': '1',
-                            'chat_id': '1',
-                            'current_user_id': '1',
-                            'author_id': '1',
-                            'read': True,
-                        }
-                    )
-                async_to_sync(self.channel_layer.send)(
-                    self.channel_name,
-                    {
-                        'type': 'chat_message',
-                        'message_type': 'create_message',
-                        'message': CHATROOM_403,
-                        'date_published': date_published,
-                        'time_published': time_published,
-                        'author': 'Ошибка',
-                        'message_id': '1',
-                        'chat_id': '1',
-                        'current_user_id': '1',
-                        'author_id': '1',
-                        'read': True,
-                    }
-                )
+                return self.send_400_message()
         except ChatRoomModel.DoesNotExist:
-            async_to_sync(self.channel_layer.send)(
-                self.channel_name,
-                {
-                    'type': 'chat_message',
-                    'message_type': 'create_message',
-                    'message': CHATROOM_404,
-                    'date_published': date_published,
-                    'time_published': time_published,
-                    'author': 'Ошибка',
-                    'message_id': '1',
-                    'chat_id': '1',
-                    'current_user_id': '1',
-                    'author_id': '1',
-                    'read': True,
-                }
-            )
-            return False
+            return self.send_400_message()
+
+    def send_400_message(self):
+        date_attr = timezone.now()
+        date_published = '{}-{}-{}'.format(date_attr.year, date_attr.month, date_attr.day)
+        time_published = '{}:{}:{}'.format(date_attr.hour, date_attr.minute, date_attr.second)
+
+        async_to_sync(self.channel_layer.send)(
+            self.channel_name,
+            {
+                'type': 'chat_message',
+                'message_type': 'create_message',
+                'message': CHAT_400,
+                'date_published': date_published,
+                'time_published': time_published,
+                'author': 'Ошибка',
+                'message_id': '1',
+                'chat_id': '1',
+                'current_user_id': '1',
+                'author_id': '1',
+                'read': True,
+            }
+        )
+        return False
