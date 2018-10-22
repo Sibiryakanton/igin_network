@@ -31,7 +31,6 @@ ALLOWED_HOSTS = ['127.0.0.1']
 
 INSTALLED_APPS = [
     'profiles_app',
-    #'messenger_app',
     'restapi_app',
     'chat_app',
 

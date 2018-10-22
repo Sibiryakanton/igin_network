@@ -52,6 +52,13 @@ class ProfileViewSet(viewsets.ModelViewSet):
         else:
             return Response(data={'pk': PROFILE_404}, status=status.HTTP_404_NOT_FOUND)
 
+    @action(detail=True, methods=['get',])
+    def get_chats(self, request, **kwargs):
+        profile = get_object_or_404(self.queryset, pk=kwargs['pk'])
+        if profile is not None:
+            chats = ChatRoomModel.objects.filter(members=request.user)
+
+
     @action(detail=True, methods=['post', ])
     def add_friend(self, request, **kwargs):
         obj = get_object_or_404(self.queryset, pk=kwargs["pk"])
